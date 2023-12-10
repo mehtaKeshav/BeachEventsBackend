@@ -116,9 +116,92 @@ app.post('/api/authenticate', async (req, res) => {
   } catch (error) {
     console.log("Did not make User")
     console.error('Authentication failed:', error);
-    res.status(500).json({ message: 'Blood' });
+    res.status(500).json({ message: 'User not found!' });
   }
 });
+
+app.post('/api/pinevent', async (req, res) =>{
+  const {id , event} = req.body
+  console.log(event)
+  try{
+    const user = await User.findOne({ 'email': id })
+    if (user){
+      console.log("This is an array ", user.Pinned)
+      const arr = user.Pinned
+      const eventString = JSON.stringify(event)
+      console.log("1: debug")
+      console.log('MongoDB Arr Before:', user.Pinned)
+      const foundEvent = arr.find((element) => {
+        const a = JSON.stringify(element) 
+        console.log("ELEMENT: ", a)
+        console.log("event: ", eventString)
+        if(a == eventString){
+          console.log("2: debug")
+          console.log('MongoDB Arr After:', user.Pinned)
+          return true
+        }
+      })
+      if(foundEvent){
+        return res.status(200).json({ message: 'Already Pinned' })
+      }
+      else{
+        arr.push(event)
+        await User.updateOne({'email': id}, {'Pinned': arr})
+        console.log('MongoDB Arr  After: ', user.Pinned)
+        return res.status(200).json({ message: 'Event Pinned Successfully' }) 
+      }
+    }
+    else{
+        return res.status(404).json({message:"User Not Found"})
+    }
+  }
+  catch(err){
+      return res.status(500).json({message: "Error Pinning the Event !"})
+    }
+    
+});
+app.delete('/api/unpin', async (req,res)=>{
+  const {id , event} = req.body
+  console.log(id)
+  try{
+    const user = await User.findOne({'email': id});
+    console.log("Inside Unpin :", user)
+    if(user){
+      const arr = user.Pinned
+      console.log("before Unpin :", arr)
+      const eventString = JSON.stringify(event)
+      const foundEvent = arr.find((element) => {
+          const a = JSON.stringify(element) 
+          console.log("ELEMENT: ", a)
+          // console.log("event: ", eventString)
+          if(a == eventString){
+            console.log("Found String")
+            return true
+          }
+      })
+      if(foundEvent){
+        const index = arr.findIndex(element => element.id == id)
+        arr.splice(index, 1)
+        await User.updateOne({'email': id}, {'Pinned': arr})
+        console.log("After Unpin: ",arr)
+        return res.status(200).json({ message: 'Unpinned the event!' })
+      }
+
+    }
+    else{
+      console.log("User Not Found")
+      return res.status(404).json({message:"User Not Found"})
+    }
+  }catch(err){
+    console.log("Error")
+    return res.status(500).json({message: "Error Un-pinning the Event!"})
+  }
+
+})
+
+
+
+
 
 
 
@@ -131,6 +214,6 @@ app.post('/api/authenticate', async (req, res) => {
 // FOR SCHOOL
 
 
-app.listen(port, '192.168.12.237', () => {
-  console.log(`Server is running on http://192.168.4.53:${port}`);
+app.listen(port, '192.168.4.53', () => {
+  console.log(`Server is running on http://0.0.0.0:${port}`);
 });
