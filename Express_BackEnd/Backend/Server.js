@@ -5,6 +5,7 @@ require('dotenv').config()
 const nodemailer = require('nodemailer');
 const User = require('./User');
 
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -40,19 +41,45 @@ function generateVerificationCode() {
 
 app.post('/api/send-verification-email', async (req, res) => {
   var { id } = req.body;
+  var { fp } = req.body;
   const verificationCode = generateVerificationCode();
-
   try {
     // Check if a user with the provided email already exists
+    console.log("id: ",id)
+    console.log("fp: ",fp)
     const existingUser = await User.findOne({ "email": id });
     console.log("existing user:", existingUser)
-  
+    
+    if (existingUser != null && fp == "New") {
+      return res.status(400).json({ message: `${id} already registered.`});
+    }
+    else if(existingUser == null){
+      console.log("this is the new user")
+      await transporter.sendMail({
+        from: 'beachevents01@gmail.com',
+        to: id,
+        subject: 'Email Verification',
+        text: `Your verification code is: ${verificationCode}`,
+      });
+      res.status(200).json({ message:  verificationCode});
+      return null;
+    }
+    else if (existingUser.isVerified === true){
+      await transporter.sendMail({
+        from: 'beachevents01@gmail.com',
+        to: id,
+        subject: 'Email Verification',
+        text: `Your verification code is: ${verificationCode}`,
+      });
+      res.status(200).json({ message:  verificationCode});
+      return null;
+    }
     if (existingUser) {
-      return res.status(400).json({ message: `${id} is already registered.` });
+      return res.status(400).json({ message: `${id} already registered.`});
     }
     else{
       await transporter.sendMail({
-        from: 'evetns.beach@gmail.com',
+        from: 'beachevents01@gmail.com',
         to: id,
         subject: 'Email Verification',
         text: `Your verification code is: ${verificationCode}`,
@@ -63,6 +90,34 @@ app.post('/api/send-verification-email', async (req, res) => {
   } catch (error) {
     console.error('Sending verification email failed:', error);
     res.status(500).json({ message: 'Sending verification email failed.' });
+  }
+
+res.status(200).json({ message:  verificationCode});
+
+});
+
+
+
+
+app.post('/api/changePassword', async (req, res) => {
+  const { id, password } = req.body;
+  
+  try {
+    // Check if the email matches the required domain
+    // console.log(id)
+    // console.log(password)
+    const user = await User.findOne({ "email": id });
+    if (password) {
+      user.password = password;
+      user.isVerified = true;
+      await user.save();
+      res.status(200).json({ message: 'Password reset successful.' });
+    } else {
+      res.status(400).json({ message: 'Password reset unsuccesful' });
+    }
+  } catch (error) {
+    console.error('Registration failed:', error);
+    res.status(500).send({ message: 'Password reset failed.' });
   }
 });
 
@@ -204,6 +259,7 @@ app.delete('/api/unpin', async (req,res)=>{
 
 
 
+// <<<<<<< HEAD
 
 
 // FOR HOME
@@ -214,6 +270,17 @@ app.delete('/api/unpin', async (req,res)=>{
 // FOR SCHOOL
 
 
-app.listen(port, '192.168.4.53', () => {
+
+
+app.listen(port, '0.0.0.0', () => {
+
   console.log(`Server is running on http://0.0.0.0:${port}`);
 });
+
+
+
+
+
+
+
+
