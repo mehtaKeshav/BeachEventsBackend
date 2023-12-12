@@ -16,7 +16,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-ALLOWED_HOSTS =  ['0.0.0.0', '172.20.10.8', '10.39.42.98', '10.39.120.229', '192.168.4.53']
+ALLOWED_HOSTS =  ['0.0.0.0', '172.20.10.8', '10.39.42.98', '10.39.120.229','10.39.16.183', '192.168.4.53', '192.168.254.11']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/

@@ -215,6 +215,54 @@ app.post('/api/pinevent', async (req, res) =>{
     }
     
 });
+
+app.post('/api/subscribe', async (req, res) =>{
+  const {id , org} = req.body
+  console.log(id)
+  console.log(org)
+  try{
+    const user = await User.findOne({ 'email': id })
+ 
+    console.log(user)
+    if (user){
+      console.log("This is an array ", user.Subscribed)
+      const arr = user.Subscribed
+
+      const orgString = JSON.stringify(org)
+      console.log('MongoDB Arr Before:', user.Subscribed)
+      const foundEvent = arr.find((element) => {
+        const a = JSON.stringify(element) 
+        // console.log("ELEMENT: ",element)
+        if(a == orgString){
+          console.log("2: debug")
+          console.log('MongoDB Arr After:', user.Subscribed)
+          return true
+        }
+      })
+      console.log(foundEvent,"________found Event Value")
+      if(foundEvent){
+        console.log("Event already in array")
+        return res.status(200).json({ message: 'Already Subscribed' })
+      }
+      else{
+  
+        arr.push(org)
+   
+        await User.updateOne({'email': id}, {'Subscribed': arr})
+        console.log('MongoDB Arr  After: ', user.Subscribed)
+        return res.status(200).json({ message: 'Organization subscribed' }) 
+      }
+    }
+    else{
+        return res.status(404).json({message:"User Not Found"})
+    }
+  }
+  catch(err){
+      return res.status(500).json({message: "Error subscribing to the organization!"})
+    }
+    
+});
+
 app.delete('/api/unpin', async (req,res)=>{
   const {id , event} = req.body
   console.log(id)
@@ -235,7 +283,7 @@ app.delete('/api/unpin', async (req,res)=>{
           }
       })
       if(foundEvent){
-        const index = arr.findIndex(element => element.id == id)
+        const index = arr.findIndex(element => element.id == event.id)
         arr.splice(index, 1)
         await User.updateOne({'email': id}, {'Pinned': arr})
         console.log("After Unpin: ",arr)
@@ -255,6 +303,44 @@ app.delete('/api/unpin', async (req,res)=>{
 })
 
 
+app.delete('/api/unsubscribe', async (req,res)=>{
+  const {id , org} = req.body
+  console.log(id)
+  try{
+    const user = await User.findOne({'email': id});
+    console.log("Inside unsubscribe :", user)
+    if(user){
+      const arr = user.Subscribed
+      console.log("before Unpin :", arr)
+      const orgString = JSON.stringify(org)
+      const foundEvent = arr.find((element) => {
+          const a = JSON.stringify(element) 
+          // console.log("ELEMENT: ", a)
+          // console.log("event: ", eventString)
+          if(a == orgString){
+            console.log("Found String")
+            return true
+          }
+      })
+      if(foundEvent){
+        const index = arr.findIndex(element => element.id == org.id )
+        arr.splice(index, 1)
+        await User.updateOne({'email': id}, {'Subscribed': arr})
+        console.log("After Unpin: ",arr)
+        return res.status(200).json({ message: `Unsubscribed!` })
+      }
+    }
+    else{
+      console.log("User Not Found")
+      return res.status(404).json({message:"User Not Found"})
+    }
+  }catch(err){
+    console.log("Error")
+    return res.status(500).json({message: "Error Unsubscribing the Org!"})
+  }
+})
+
+
 
 
 
@@ -270,10 +356,9 @@ app.delete('/api/unpin', async (req,res)=>{
 // FOR SCHOOL
 
 
+// 192.168.254.11 home
 
-
-app.listen(port, '0.0.0.0', () => {
-
+app.listen(port, '192.168.254.11', () => {
   console.log(`Server is running on http://0.0.0.0:${port}`);
 });
 
